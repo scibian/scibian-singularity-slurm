@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Copyright (C) 2017 Scibian Project <legal@scibian.org>
+#
+# This file is part of scibian-singularity-slurm.
+#
+# scibian-singularity-slurm is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# scibian-singularity-slurm is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with scibian-singularity-slurm.  If not, see
+# <http://www.gnu.org/licenses/>.
+
+set -ueo pipefail
+
+srun_legacy=${SINGULARITY_SRUN_LEGACY:-/usr/bin/srun.legacy}
+
+# If not into a container then exec legacy ssh
+if [ -z "${SINGULARITY_CONTAINER:-}" ]; then
+  exec "$srun_legacy" "$@"
+fi
+
+readonly SRUN_SINGLE_OPTS="[EHIkKlOQsuvXZhV]"
+readonly SRUN_MULTI_OPTS="[AbcdDeiJLMmnNopqrStTWCBG]"
+
+SRUN_OPTIONS=()
+SRUN_EXE=
+
+# While an option is found, stack it
+# Stack script parameter as well, and the options just after it
+# Stop at the first parameter which is not an option nor the script parameter
+while (( $# > 0 )) ;do
+  case "${1:-}" in
+    --*)
+      SRUN_OPTIONS+=("$1")
+      shift
+      ;;
+
+    -*)
+      if [[ "$1" =~ -${SRUN_SINGLE_OPTS}*$ ]]; then
+        SRUN_OPTIONS+=("$1")
+        if [[ "$1" =~ ^.*I$ ]]; then
+          if [ "${2:-}" =~ ^[0-9]+$ ]]; then
+            SRUN_OPTIONS+=("$2")
+            shift
+          fi
+        fi
+	shift
+      elif [[ "$1" =~ -${SRUN_SINGLE_OPTS}*${SRUN_MULTI_OPTS}$ ]]; then
+        SRUN_OPTIONS+=("$1" "${2:-}")
+        shift 2
+      else
+        # Do not stack invalid options (will be handled by legacy slurm command)
+        break
+      fi
+      ;;
+    *)
+      SRUN_EXE="${1:-}"
+      shift
+      break
+      ;;
+  esac
+done
+
+if [ -z "${SRUN_EXE:-}" ]; then
+  # No script -> call legacy srun
+  exec "$srun_legacy" "${SRUN_OPTIONS[@]}" "$@"
+fi
+
+if [ "${SRUN_EXE:0:1}" != "." ] && [[ "${SRUN_EXE}" =~ ^[^/]+$ ]]; then
+  if found="$(which "$SRUN_EXE")"; then
+    SRUN_EXE="$found"
+  fi
+fi
+if [ -f "$SRUN_EXE" ]; then
+  SRUN_EXE="$(realpath "$SRUN_EXE")"
+fi
+
+tmpscript=$(mktemp --tmpdir "$(basename "$SRUN_EXE").XXX")
+trap 'rm -f $tmpscript' EXIT
+
+echo "#!/bin/sh" >$tmpscript
+if file -b "$SRUN_EXE" | grep -qw text; then
+  sed -E -e '1d' -e '/^(#.*|\s*)$/!Q' "$SRUN_EXE" >>$tmpscript
+fi
+echo "exec singularity exec '$SINGULARITY_CONTAINER' '$SRUN_EXE' \"\$@\"" >>$tmpscript
+cat $tmpscript
+
+chmod a+x $tmpscript
+
+"$srun_legacy" "${SRUN_OPTIONS[@]}" $tmpscript "$@"

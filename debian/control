@@ -1,0 +1,17 @@
+Source: scibian-singularity-slurm
+Section: net
+Priority: optional
+Maintainer: Scibian Project <packaging@scibian.org>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.8
+Homepage: https://github.com/scibian/scibian-singularity-slurm
+Vcs-Git: https://github.com/scibian/scibian-singularity-slurm.git
+Vcs-Browser: https://github.com/scibian/scibian-singularity-slurm
+
+Package: scibian-singularity-slurm
+Architecture: all
+Depends: ${misc:Depends}
+Description: SSH wrapper for singularity containers
+ This package replaces /usr/bin/{sbatch,srun} with a wrapper script which,
+ when called from a Singularity container, runs the job into the same
+ container.
