@@ -65,7 +65,11 @@ done
 
 if [ -z "${SBATCH_SCRIPT:-}" ]; then
   # No script -> call legacy sbatch
-  exec "$sbatch_legacy" "${SBATCH_OPTIONS[@]}" "$@"
+  if (( ${#SBATCH_OPTIONS[@]} > 0 )); then
+    exec "$sbatch_legacy" "${SBATCH_OPTIONS[@]}" "$@"
+  else
+    exec "$sbatch_legacy" "$@"
+  fi
 fi
 
 if [ -f "$SBATCH_SCRIPT" ]; then
@@ -81,4 +85,8 @@ echo "exec singularity exec '$SINGULARITY_CONTAINER' '$SBATCH_SCRIPT' \"\$@\"" >
 
 chmod a+x $tmpscript
 
-"$sbatch_legacy" "${SBATCH_OPTIONS[@]}" $tmpscript "$@"
+if (( ${#SBATCH_OPTIONS[@]} > 0 )); then
+  "$sbatch_legacy" "${SBATCH_OPTIONS[@]}" $tmpscript "$@"
+else
+  "$sbatch_legacy" $tmpscript "$@"
+fi

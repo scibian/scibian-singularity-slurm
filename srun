@@ -71,7 +71,11 @@ done
 
 if [ -z "${SRUN_EXE:-}" ]; then
   # No script -> call legacy srun
-  exec "$srun_legacy" "${SRUN_OPTIONS[@]}" "$@"
+  if (( ${#SRUN_OPTIONS[@]} > 0 )); then
+    exec "$srun_legacy" "${SRUN_OPTIONS[@]}" "$@"
+  else
+    exec "$srun_legacy" "$@"
+  fi
 fi
 
 if [ "${SRUN_EXE:0:1}" != "." ] && [[ "${SRUN_EXE}" =~ ^[^/]+$ ]]; then
@@ -95,4 +99,8 @@ cat $tmpscript
 
 chmod a+x $tmpscript
 
-"$srun_legacy" "${SRUN_OPTIONS[@]}" $tmpscript "$@"
+if (( ${#SRUN_OPTIONS[@]} > 0 )); then
+  "$srun_legacy" "${SRUN_OPTIONS[@]}" $tmpscript "$@"
+else
+  "$srun_legacy" $tmpscript "$@"
+fi

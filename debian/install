@@ -1,2 +1,2 @@
-usr/bin/sbatch
-usr/bin/srun
+sbatch usr/bin
+srun usr/bin

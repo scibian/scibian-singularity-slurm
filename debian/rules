@@ -2,7 +2,3 @@
 
 %:
 	dh $@
-
-override_dh_auto_install:
-	install -D singularity-sbatch debian/tmp/usr/bin/sbatch
-	install -D singularity-srun debian/tmp/usr/bin/srun
