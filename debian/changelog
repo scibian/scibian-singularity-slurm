@@ -1,3 +1,9 @@
+scibian-singularity-slurm (0.4) scibian10; urgency=medium
+
+  * Create $tmpscript into $HOME
+
+ -- Gilles Filippini <gilles.filippini@edf.fr>  Wed, 09 Dec 2020 14:43:24 +0100
+
 scibian-singularity-slurm (0.3) scibian10; urgency=medium
 
   * Build for Scibian 10
