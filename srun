@@ -87,7 +87,7 @@ if [ -f "$SRUN_EXE" ]; then
   SRUN_EXE="$(realpath "$SRUN_EXE")"
 fi
 
-tmpscript=$(mktemp --tmpdir "$(basename "$SRUN_EXE").XXX")
+tmpscript=$(mktemp --tmpdir="$HOME" ".$(basename "$SRUN_EXE").XXX")
 trap 'rm -f $tmpscript' EXIT
 
 echo "#!/bin/sh" >$tmpscript
@@ -95,8 +95,6 @@ if file -b "$SRUN_EXE" | grep -qw text; then
   sed -E -e '1d' -e '/^(#.*|\s*)$/!Q' "$SRUN_EXE" >>$tmpscript
 fi
 echo "exec singularity exec '$SINGULARITY_CONTAINER' '$SRUN_EXE' \"\$@\"" >>$tmpscript
-cat $tmpscript
-
 chmod a+x $tmpscript
 
 if (( ${#SRUN_OPTIONS[@]} > 0 )); then
