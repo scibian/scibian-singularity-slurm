@@ -1,3 +1,10 @@
+scibian-singularity-slurm (0.5sci9u1) scibian9; urgency=medium
+
+  * Create temporary script into a place accessible from all nodes
+  * Support scripts with executable flag not set
+
+ -- Gilles Filippini <gilles.filippini@edf.fr>  Fri, 11 Dec 2020 18:02:13 +0100
+
 scibian-singularity-slurm (0.4sci9u1) scibian9; urgency=medium
 
   * Create $tmpscript into $HOME

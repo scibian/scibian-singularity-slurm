@@ -27,6 +27,9 @@ if [ -z "${SINGULARITY_CONTAINER:-}" ]; then
   exec "$srun_legacy" "$@"
 fi
 
+slurm_tmpdir="${SINGULARITY_SLURM_TMPDIR:-$HOME/.singularity_slurm_tmp}"
+mkdir -p "slurm_tmpdir"
+
 readonly SRUN_SINGLE_OPTS="[EHIkKlOQsuvXZhV]"
 readonly SRUN_MULTI_OPTS="[AbcdDeiJLMmnNopqrStTWCBG]"
 
@@ -87,14 +90,20 @@ if [ -f "$SRUN_EXE" ]; then
   SRUN_EXE="$(realpath "$SRUN_EXE")"
 fi
 
-tmpscript=$(mktemp --tmpdir="$HOME" ".$(basename "$SRUN_EXE").XXX")
+tmpscript=$(mktemp --tmpdir="$slurm_tmpdir" "$(basename "$SRUN_EXE").XXX")
 trap 'rm -f $tmpscript' EXIT
 
 echo "#!/bin/sh" >$tmpscript
 if file -b "$SRUN_EXE" | grep -qw text; then
   sed -E -e '1d' -e '/^(#.*|\s*)$/!Q' "$SRUN_EXE" >>$tmpscript
+  # Retrieve interpretor for when the script is not executable
+  if ! [ -x "$SRUN_EXE" ]; then
+    interp=$(head -1 "$SRUN_EXE" | grep '^#!') || interp=/bin/sh
+    interp="${interp#\#!}"
+  fi
 fi
-echo "exec singularity exec '$SINGULARITY_CONTAINER' '$SRUN_EXE' \"\$@\"" >>$tmpscript
+echo "export SINGULARITY_OPTIONS='${SINGULARITY_OPTIONS:-}'" >>$tmpscript
+echo "exec singularity exec ${SINGULARITY_OPTIONS:-} '$SINGULARITY_CONTAINER' ${interp:-} '$SRUN_EXE' \"\$@\"" >>$tmpscript
 chmod a+x $tmpscript
 
 if (( ${#SRUN_OPTIONS[@]} > 0 )); then
