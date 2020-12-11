@@ -27,6 +27,9 @@ if [ -z "${SINGULARITY_CONTAINER:-}" ]; then
   exec "$sbatch_legacy" "$@"
 fi
 
+slurm_tmpdir="${SINGULARITY_SLURM_TMPDIR:-$HOME/.singularity_slurm_tmp}"
+mkdir -p "slurm_tmpdir"
+
 readonly SBATCH_SINGLE_OPTS="[HkOQsvWV]"
 readonly SBATCH_MULTI_OPTS="[aAbcdDeiJLMmnNopqStCFwxBG]"
 
@@ -76,12 +79,19 @@ if [ -f "$SBATCH_SCRIPT" ]; then
   SBATCH_SCRIPT="$(realpath "$SBATCH_SCRIPT")"
 fi
 
-tmpscript=$(mktemp --tmpdir "$(basename "$SBATCH_SCRIPT").XXX")
+tmpscript=$(mktemp --tmpdir="$slurm_tmpdir" "$(basename "$SBATCH_SCRIPT").XXX")
 trap 'rm -f $tmpscript' EXIT
+
+# Retrieve interpretor for when the script is not executable
+if ! [ -x "$SBATCH_SCRIPT" ]; then
+  interp=$(head -1 "$SBATCH_SCRIPT" | grep '^#!') || interp=/bin/sh
+  interp="${interp#\#!}"
+fi
 
 echo "#!/bin/sh" >$tmpscript
 sed -E -e '1d' -e '/^(#.*|\s*)$/!Q' "$SBATCH_SCRIPT" >>$tmpscript
-echo "exec singularity exec '$SINGULARITY_CONTAINER' '$SBATCH_SCRIPT' \"\$@\"" >>$tmpscript
+echo "export SINGULARITY_OPTIONS='${SINGULARITY_OPTIONS:-}'" >>$tmpscript
+echo "exec singularity exec ${SINGULARITY_OPTIONS:-} '$SINGULARITY_CONTAINER' ${interp:-} '$SBATCH_SCRIPT' \"\$@\"" >>$tmpscript
 
 chmod a+x $tmpscript
 
