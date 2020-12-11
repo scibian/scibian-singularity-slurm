@@ -1,3 +1,9 @@
+scibian-singularity-slurm (0.6) scibian10; urgency=medium
+
+  * Fix typo
+
+ -- Gilles Filippini <gilles.filippini@edf.fr>  Fri, 11 Dec 2020 23:03:11 +0100
+
 scibian-singularity-slurm (0.5) scibian10; urgency=medium
 
   * Create temporary script into a place accessible from all nodes
