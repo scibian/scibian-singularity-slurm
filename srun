@@ -28,7 +28,7 @@ if [ -z "${SINGULARITY_CONTAINER:-}" ]; then
 fi
 
 slurm_tmpdir="${SINGULARITY_SLURM_TMPDIR:-$HOME/.singularity_slurm_tmp}"
-mkdir -p "slurm_tmpdir"
+mkdir -p "$slurm_tmpdir"
 
 readonly SRUN_SINGLE_OPTS="[EHIkKlOQsuvXZhV]"
 readonly SRUN_MULTI_OPTS="[AbcdDeiJLMmnNopqrStTWCBG]"
