@@ -32,6 +32,20 @@ mkdir -p "$slurm_tmpdir"
 
 readonly SBATCH_SINGLE_OPTS="[HkOQsvWV]"
 readonly SBATCH_MULTI_OPTS="[aAbcdDeiJLMmnNopqStCFwxBG]"
+readonly SBATCH_MULTI_LONG_OPTS="
+array account acctg-freq extra-node-info batch bb bbf begin bxi-bandwidth
+cluster-constraint comment
+constraint cores-per-socket cpu-freq cpus-per-gpu cpus-per-task
+deadline delay-boot dependency chdir error export export-file nodefile gid gpus
+gpu-bind gpu-freq gpus-per-node gpus-per-socket gpus-per-task gres gre-flags hint
+input job-name kill-on-invalid-dep licenses clusters distribution mail-type mail-user
+msc-label mem mem-per-cpu mem-per-gpu mem-bind mincpus
+nodes ntasks network ntasks-per-core ntasks-per-node ntasks-per-socket
+output open-mode partition power priority profile qos
+reservation core-spec signal sockets-per-node switches
+time thread-spec threads-per-core time-min
+tmp uid wait-all-nodes nodelist wckey wrap exclude
+"
 
 SBATCH_OPTIONS=()
 SBATCH_SCRIPT=
@@ -41,6 +55,15 @@ SBATCH_SCRIPT=
 # Stop at the first parameter which is not an option nor the script parameter
 while (( $# > 0 )) ;do
   case "${1:-}" in
+    --*)
+      if [[ "$(echo $SBATCH_MULTI_LONG_OPTS)" =~ (^| )"${1#--}"( |$) ]]; then
+        SBATCH_OPTIONS+=("$1" "${2:-}")
+        shift 2
+      else
+        SBATCH_OPTIONS+=("$1")
+        shift
+      fi
+      ;;
     --*)
       SBATCH_OPTIONS+=("$1")
       shift
@@ -91,7 +114,8 @@ fi
 echo "#!/bin/sh" >$tmpscript
 sed -E -e '1d' -e '/^(#.*|\s*)$/!Q' "$SBATCH_SCRIPT" >>$tmpscript
 echo "export SINGULARITY_OPTIONS='${SINGULARITY_OPTIONS:-}'" >>$tmpscript
-echo "exec singularity exec ${SINGULARITY_OPTIONS:-} '$SINGULARITY_CONTAINER' ${interp:-} '$SBATCH_SCRIPT' \"\$@\"" >>$tmpscript
+# Option -s: see https://github.com/hpcng/singularity/issues/3250#issuecomment-481323679
+echo "exec singularity -s exec ${SINGULARITY_OPTIONS:-} '$SINGULARITY_CONTAINER' ${interp:-} '$SBATCH_SCRIPT' \"\$@\"" >>$tmpscript
 
 chmod a+x $tmpscript
 
