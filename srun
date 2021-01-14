@@ -32,6 +32,19 @@ mkdir -p "$slurm_tmpdir"
 
 readonly SRUN_SINGLE_OPTS="[EHIkKlOQsuvXZhV]"
 readonly SRUN_MULTI_OPTS="[AbcdDeiJLMmnNopqrStTWCBG]"
+readonly SRUN_MULTI_LONG_OPTS="
+account acctg-freq extra-node-info bb begin bxi-bandwidth cluster-constraint comment
+constraint cores-per-socket cpu-bind cpu-freq cpus-per-gpu cpus-per-task
+deadline delay-boot dependency chdir error epilog export nodefile gid gpus
+gpu-bind gpu-freq gpus-per-node gpus-per-socket gpus-per-task gres hint
+input job-name jobid licenses clusters distribution mail-type mail-user
+msc-label mem mem-per-cpu mem-per-gpu mem-bind mincpus msg-timeout mpi
+nodes ntasks network ntasks-per-core ntasks-per-node ntasks-per-socket
+output open-mode het-group partition power priority profile prolog qos
+relative reservation core-spec signal slurm-debug sockets-per-node switches
+threads time task-epilog task-prolog thread-spec threads-per-core time-min
+tmp uid wait nodelist wckey exclude x11
+"
 
 SRUN_OPTIONS=()
 SRUN_EXE=
@@ -42,10 +55,14 @@ SRUN_EXE=
 while (( $# > 0 )) ;do
   case "${1:-}" in
     --*)
-      SRUN_OPTIONS+=("$1")
-      shift
+      if [[ "$(echo $SRUN_MULTI_LONG_OPTS)" =~ (^| )"${1#--}"( |$) ]]; then
+        SRUN_OPTIONS+=("$1" "${2:-}")
+        shift 2
+      else
+        SRUN_OPTIONS+=("$1")
+        shift
+      fi
       ;;
-
     -*)
       if [[ "$1" =~ -${SRUN_SINGLE_OPTS}*$ ]]; then
         SRUN_OPTIONS+=("$1")
@@ -103,7 +120,8 @@ if file -b "$SRUN_EXE" | grep -qw text; then
   fi
 fi
 echo "export SINGULARITY_OPTIONS='${SINGULARITY_OPTIONS:-}'" >>$tmpscript
-echo "exec singularity exec ${SINGULARITY_OPTIONS:-} '$SINGULARITY_CONTAINER' ${interp:-} '$SRUN_EXE' \"\$@\"" >>$tmpscript
+# Option -s: see https://github.com/hpcng/singularity/issues/3250#issuecomment-481323679
+echo "exec singularity -s exec ${SINGULARITY_OPTIONS:-} '$SINGULARITY_CONTAINER' ${interp:-} '$SRUN_EXE' \"\$@\"" >>$tmpscript
 chmod a+x $tmpscript
 
 if (( ${#SRUN_OPTIONS[@]} > 0 )); then
