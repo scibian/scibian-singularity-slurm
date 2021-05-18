@@ -124,6 +124,10 @@ echo "export SINGULARITY_OPTIONS='${SINGULARITY_OPTIONS:-}'" >>$tmpscript
 echo "exec singularity -s exec ${SINGULARITY_OPTIONS:-} '$SINGULARITY_CONTAINER' ${interp:-} '$SRUN_EXE' \"\$@\"" >>$tmpscript
 chmod a+x $tmpscript
 
+# PATH and LD_LIBRARY_PATH should be kept
+export SINGULARITYENV_PATH="$PATH"
+export SINGULARITYENV_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+
 if (( ${#SRUN_OPTIONS[@]} > 0 )); then
   "$srun_legacy" "${SRUN_OPTIONS[@]}" $tmpscript "$@"
 else
