@@ -1,3 +1,9 @@
+scibian-singularity-slurm (0.8) scibian10; urgency=medium
+
+  * srun: keep PATH and LD_LIBRARY_PATH
+
+ -- Gilles Filippini <gilles.filippini@edf.fr>  Tue, 18 May 2021 23:34:37 +0200
+
 scibian-singularity-slurm (0.7) scibian10; urgency=medium
 
   * Handle srun / sbatch long options
