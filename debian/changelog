@@ -1,3 +1,11 @@
+scibian-singularity-slurm (0.8sci11u1) scibian11; urgency=medium
+
+  * Bump debian branch in gbp.conf
+  * Bump d/compat to 13
+  * Build for Scibian 11
+
+ -- Rémi Palancher <remi-externe.palancher@edf.fr>  Thu, 12 May 2022 14:38:03 +0200
+
 scibian-singularity-slurm (0.8) scibian10; urgency=medium
 
   * srun: keep PATH and LD_LIBRARY_PATH
